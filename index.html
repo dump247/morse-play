@@ -14,18 +14,21 @@
       <button type="button" id="play-btn">Play</button>
     </form>
     <script>
-      const MORSE_CODE = new MorseCode({ volume: 0.1 });
       const wpmInput = document.getElementById('wpm');
       const frequencyInput = document.getElementById('frequency');
       const playTextInput = document.getElementById('play-text');
       const playBtn = document.getElementById('play-btn');
 
-      MORSE_CODE.wordsPerMinute = parseInt(wpmInput.value, 10);
+      const MORSE_CODE = new MorseCode({
+        volume: 0.1,
+        wordsPerMinute: parseInt(wpmInput.value, 10),
+        frequencyHz: parseInt(frequencyInput.value, 10),
+      });
+
       wpmInput.addEventListener('change', (evt) => {
         MORSE_CODE.wordsPerMinute = parseInt(evt.target.value, 10);
       });
 
-      MORSE_CODE.frequencyHz = parseInt(frequencyInput.value, 10);
       frequencyInput.addEventListener('change', (evt) => {
         MORSE_CODE.frequencyHz = parseInt(evt.target.value, 10);
       });
