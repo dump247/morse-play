@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <script src="./functions.js"></script>
+  </head>
+  <body>
+    <form>
+      <label for="wpm">WPM</label>
+      <input name="wpm" type="number" min="1" max="50" id="wpm" value="5" /><br>
+      <label for="frequency">Frequency</label>
+      <input name="frequency" type="number" min="100" max="1000" id="frequency" value="750" /><br>
+      <input name="text" type="text" id="play-text" /><br/>
+      <button type="button" id="play-btn">Play</button>
+    </form>
+    <script>
+      const MORSE_CODE = new MorseCode({ volume: 0.1 });
+      const wpmInput = document.getElementById('wpm');
+      const frequencyInput = document.getElementById('frequency');
+      const playTextInput = document.getElementById('play-text');
+      const playBtn = document.getElementById('play-btn');
+
+      MORSE_CODE.wordsPerMinute = parseInt(wpmInput.value, 10);
+      wpmInput.addEventListener('change', (evt) => {
+        MORSE_CODE.wordsPerMinute = parseInt(evt.target.value, 10);
+      });
+
+      MORSE_CODE.frequencyHz = parseInt(frequencyInput.value, 10);
+      frequencyInput.addEventListener('change', (evt) => {
+        MORSE_CODE.frequencyHz = parseInt(evt.target.value, 10);
+      });
+
+      playBtn.addEventListener('click', () => {
+        playBtn.disabled = true;
+
+        MORSE_CODE.play(playTextInput.value).then(() => {
+          playBtn.disabled = false;
+        });
+      });
+    </script>
+  </body>
+</html>
