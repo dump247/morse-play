@@ -54,7 +54,7 @@ const playTone = async (audioContext, frequencyHz, durationSecs, volume) => {
   const gain = audioContext.createGain();
 
   oscillator.frequency.value = frequencyHz;
-  oscillator.type = 'square';
+  oscillator.type = 'sine';
   oscillator.connect(gain);
 
   gain.gain.value = volume;
