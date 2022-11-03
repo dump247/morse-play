@@ -143,6 +143,7 @@ class MorseCode {
     const msBetweenWords = msPerUnit * 7;
 
     const playMorseTone = async (durationSecs) => {
+      // AudioContext can only be constructed as the result of a user action
       if (!this.#audioContext) {
         this.#audioContext = new AudioContext();
       }
