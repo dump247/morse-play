@@ -119,6 +119,7 @@ const noop = async () => Promise.resolve();
 class MorseCode {
   #wordsPerMinute;
   #audioContext;
+  #speechSynthesis
   #letters;
   #pauseBetweenChars;
   #pauseBetweenWords;
@@ -127,6 +128,12 @@ class MorseCode {
     this.frequencyHz = frequencyHz;
     this.volume = volume;
     this.wordsPerMinute = wordsPerMinute;
+    this.#speechSynthesis = window.speechSynthesis;
+    this.voice = null;
+  }
+
+  get voices() {
+    return this.#speechSynthesis.getVoices();
   }
 
   set wordsPerMinute(value) {

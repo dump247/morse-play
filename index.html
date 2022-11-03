@@ -13,6 +13,8 @@
       <input name="frequency" type="number" min="100" max="1000" id="frequency" value="750" /><br>
       <label for="play-text">Text</label>
       <input name="text" type="text" id="play-text" /><br/>
+      <label for="voice-list">Voices</label>
+      <select id="voice-list"></select><br/>
       <button type="button" id="play-btn">Play</button>
     </form>
     <script>
@@ -21,11 +23,18 @@
         const frequencyInput = document.getElementById('frequency');
         const playTextInput = document.getElementById('play-text');
         const playBtn = document.getElementById('play-btn');
+        const voiceList = document.getElementById("voice-list");
 
         const MORSE_CODE = new MorseCode({
           volume: 0.1,
           wordsPerMinute: parseInt(wpmInput.value, 10),
           frequencyHz: parseInt(frequencyInput.value, 10),
+        });
+
+        MORSE_CODE.voices.forEach(voice => {
+          const option = document.createElement('option');
+          option.textContent = `${voice.name} (${voice.lang})`;
+          voiceList.appendChild(option);
         });
 
         wpmInput.addEventListener('change', (evt) => {
