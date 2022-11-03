@@ -1,3 +1,6 @@
+/**
+ * Mapping letters to their Morse code sequence with hyphen (-) and period (.).
+ */
 const LETTERS = {
   'A': '.-',
   'B': '-...',
@@ -45,10 +48,20 @@ const LETTERS = {
   '/': '-..-.',
 };
 
-const sleep = async (durationMillis) => {
-  return new Promise(resolve => setTimeout(resolve, durationMillis));
-};
+/**
+ * Async sleep method.
+ */
+const sleep = async (durationMillis) => new Promise(resolve => setTimeout(resolve, durationMillis));
 
+/**
+ * Play a tone on the speakers.
+ *
+ * @param audioContext Browser [AudioContext] to play the tone with.
+ * @param frequencyHz Tone frequency (int).
+ * @param durationSecs Duration the tone should play (float).
+ * @param volume Tone volume (int, 0-100).
+ * @returns Promise that completes when the tone stops playing.
+ */
 const playTone = async (audioContext, frequencyHz, durationSecs, volume) => {
   const oscillator = audioContext.createOscillator();
   const gain = audioContext.createGain();
@@ -67,27 +80,41 @@ const playTone = async (audioContext, frequencyHz, durationSecs, volume) => {
   });
 };
 
+/**
+ * Map the values of an object to different values.
+ *
+ * @param obj Object to map the values of.
+ * @param mapper Function that accepts the value and key and returns a different value: `(value, key) => newValue`
+ * @returns New object with the keys mapped to different values.
+ */
 const mapValues = (obj, mapper) => {
   const output = {};
   for (const [key, value] of Object.entries(obj)) {
-    output[key] = mapper(value);
+    output[key] = mapper(value, key);
   }
   return output;
 }
 
-const zip = (list, separator) => {
-  return list.flatMap((entry) => [entry, separator]).slice(0, -1);
-};
+/**
+ * Add a separator between each item in a list.
+ * @returns Copy of the input list with [separator] between each element
+ */
+const zipSeparator = (list, separator) => list.flatMap((entry) => [entry, separator]).slice(0, -1);
 
-const awaitList = async (list) => {
-  for (const action of list) {
+/**
+ * Invoke a list of async methods in order.
+ * @returns Promise that completes when all the actions have completed or an action fails.
+ */
+const executeActions = async (actions) => {
+  for (const action of actions) {
     await action();
   }
 };
 
-const noop = async () => {
-  return Promise.resolve();
-};
+/**
+ * Async method that does nothing.
+ */
+const noop = async () => Promise.resolve();
 
 class MorseCode {
   #wordsPerMinute;
@@ -134,9 +161,9 @@ class MorseCode {
     this.#pauseBetweenWords = async() => sleep(msBetweenWords);
 
     this.#letters = mapValues(LETTERS, (pattern) => {
-      const parts = zip(pattern.split('').map((c) => tones[c]), pauseInChar);
+      const parts = zipSeparator(pattern.split('').map((c) => tones[c]), pauseInChar);
 
-      return async () => awaitList(parts);
+      return async () => executeActions(parts);
     });
   }
 
@@ -145,8 +172,8 @@ class MorseCode {
   }
 
   async play(text) {
-    return awaitList(
-      zip(
+    return executeActions(
+      zipSeparator(
         text.toUpperCase().split(/\s+/).map((word) => async () => {
           console.log(`Playing word: ${word}`);
           await this._playWord(word);
@@ -158,8 +185,8 @@ class MorseCode {
 
 
   async _playWord(word) {
-    return awaitList(
-      zip(
+    return executeActions(
+      zipSeparator(
         word.split('').map((letter) => async () => {
           console.log(`Playing letter: ${letter}`);
           await (this.#letters[letter] || noop)();
