@@ -132,6 +132,16 @@ class MorseCode {
     this.voice = null;
   }
 
+  addEventListener(type, listener) {
+    switch (type) {
+      case 'voiceschanged':
+        this.#speechSynthesis.onvoiceschanged += listener;
+        break;
+
+      default: throw Error(`Unknown event type: ${type}`)
+    }
+  }
+
   get voices() {
     return this.#speechSynthesis.getVoices();
   }

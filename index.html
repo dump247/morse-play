@@ -25,16 +25,26 @@
         const playBtn = document.getElementById('play-btn');
         const voiceList = document.getElementById("voice-list");
 
+        function loadVoices() {
+          console.info(`Loading voices: count=${MORSE_CODE.voices.length}`)
+          MORSE_CODE.voices.forEach(voice => {
+            const option = document.createElement('option');
+            option.textContent = `${voice.name} (${voice.lang})`;
+            voiceList.appendChild(option);
+          });
+        }
+
         const MORSE_CODE = new MorseCode({
           volume: 0.1,
           wordsPerMinute: parseInt(wpmInput.value, 10),
           frequencyHz: parseInt(frequencyInput.value, 10),
         });
 
-        MORSE_CODE.voices.forEach(voice => {
-          const option = document.createElement('option');
-          option.textContent = `${voice.name} (${voice.lang})`;
-          voiceList.appendChild(option);
+        loadVoices();
+        MORSE_CODE.addEventListener('voiceschanged', (evt) => {
+          console.info("voiceschanged", evt);
+          voiceList.replaceChildren();
+          loadVoices();
         });
 
         wpmInput.addEventListener('change', (evt) => {
