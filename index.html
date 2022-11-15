@@ -11,12 +11,19 @@
       <input name="wpm" type="number" min="1" max="50" id="wpm" value="5" /><br>
       <label for="frequency">Frequency</label>
       <input name="frequency" type="number" min="100" max="1000" id="frequency" value="750" /><br>
-      <label for="play-text">Text</label>
-      <input name="text" type="text" id="play-text" /><br/>
+      <fieldset>
+        <legend>Content to play</legend>
+        <input type="radio" name="content" value="text" id="play-text-radio" checked>
+        <label for="play-text-radio">Text</label>
+        <input name="text" type="text" id="play-text" /><br/>
+        <input type="radio" name="content" value="call-signs" id="play-call-signs-radio">
+        <label for="play-call-signs-radio">Call signs</label>
+      </fieldset>
       <label for="voice-list">Voices</label>
       <select id="voice-list"></select><br/>
       <button type="button" id="play-btn">Play</button>
     </form>
+    <h1 id="current-word"></h1>
     <script>
       {
         const wpmInput = document.getElementById('wpm');
@@ -24,6 +31,7 @@
         const playTextInput = document.getElementById('play-text');
         const playBtn = document.getElementById('play-btn');
         const voiceList = document.getElementById("voice-list");
+        const currentWord = document.getElementById("current-word");
 
         function loadVoices() {
           console.info(`Loading voices: count=${MORSE_CODE.voices.length}`)
@@ -47,6 +55,10 @@
           loadVoices();
         });
 
+        MORSE_CODE.addEventListener('playword', (word) => {
+          currentWord.innerText = word;
+        });
+
         wpmInput.addEventListener('change', (evt) => {
           MORSE_CODE.wordsPerMinute = parseInt(evt.target.value, 10);
         });
@@ -56,11 +68,25 @@
         });
 
         playBtn.addEventListener('click', () => {
-          playBtn.disabled = true;
+          const selectedContent = document.querySelector('input[name="content"]:checked').value;
+          console.info(`Playing content: selected=${selectedContent}`)
 
-          MORSE_CODE.play(playTextInput.value).then(() => {
-            playBtn.disabled = false;
-          });
+          switch (selectedContent) {
+            case 'text':
+              playBtn.disabled = true;
+              MORSE_CODE.play(playTextInput.value).then(() => {
+                playBtn.disabled = false;
+                currentWord.innerText = '';
+              });
+              break;
+
+            case 'call-signs':
+              playBtn.disabled = true;
+              MORSE_CODE.playWords(generateCallSigns());
+              break;
+
+            default: throw Error(`Unknown content type: ${selectedContent}`)
+          }
         });
       }
     </script>

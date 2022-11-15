@@ -1,3 +1,38 @@
+const CALL_SIGN_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const CALL_SIGN_NUMBERS = '1234567890';
+
+const CALL_SIGN_FORMATS = {
+  COMMON: [
+    'LNL',
+    'LNLL',
+    'LNLLL',
+    'LLNL',
+    'LLNL',
+    'LLNLL',
+    'LLNLLL',
+  ],
+
+  LESS_COMMON: [
+    'NLNL',
+    'NLNLL',
+    'NLNLLL',
+  ],
+
+  UNCOMMON: [
+    'LNNL',
+    'NL/LNLL',
+    'NL/LLNLL',
+    'NL/LLNLLL',
+    'LLN/LNLL',
+    'LLN/LLNL',
+    'LLN/LLNLL',
+    'LLN/LLNLLL',
+    'LL/LLNL',
+    'LL/LLNLL',
+    'LLNNLLL',
+  ],
+}
+
 /**
  * Mapping letters to their Morse code sequence with hyphen (-) and period (.).
  */
@@ -72,7 +107,7 @@ const playTone = async (audioContext, frequencyHz, durationSecs, volume) => {
 
   gain.gain.value = volume;
   gain.connect(audioContext.destination);
- 
+
   return new Promise(resolve => {
     oscillator.onended = resolve;
     oscillator.start(audioContext.currentTime);
@@ -116,6 +151,55 @@ const executeActions = async (actions) => {
  */
 const noop = async () => Promise.resolve();
 
+const randomElement = (array) => array[Math.floor(Math.random() * array.length)]
+
+const randomChar = (characters) => characters.charAt(Math.floor(Math.random() * characters.length));
+
+const callSign = (format) => {
+  let result = '';
+
+  for (let ch of format) {
+    switch (ch) {
+      case 'L':
+        result += randomChar(CALL_SIGN_LETTERS);
+        break;
+
+      case 'N':
+        result += randomChar(CALL_SIGN_NUMBERS);
+        break;
+
+      case '/':
+        result += ch;
+        break;
+
+      default: throw Error(`Unknown call sign format char: ${ch}`);
+    }
+  }
+
+  return result;
+}
+
+const generateCallSign = () => {
+  let next = Math.random();
+  let elements;
+
+  if (next < 0.9) {
+    elements = CALL_SIGN_FORMATS.COMMON;
+  } else if (next < 0.99) {
+    elements = CALL_SIGN_FORMATS.LESS_COMMON;
+  } else {
+    elements = CALL_SIGN_FORMATS.UNCOMMON;
+  }
+
+  return callSign(randomElement(elements));
+}
+
+const generateCallSigns = function* () {
+  while (true) {
+    yield generateCallSign();
+  }
+}
+
 class MorseCode {
   #wordsPerMinute;
   #audioContext;
@@ -123,13 +207,15 @@ class MorseCode {
   #letters;
   #pauseBetweenChars;
   #pauseBetweenWords;
+  #playWordHandlers
 
-  constructor({ wordsPerMinute = 5, frequencyHz = 750, volume = 1.0 } = {}) {
+  constructor({wordsPerMinute = 5, frequencyHz = 750, volume = 1.0} = {}) {
     this.frequencyHz = frequencyHz;
     this.volume = volume;
     this.wordsPerMinute = wordsPerMinute;
     this.#speechSynthesis = window.speechSynthesis;
     this.voice = null;
+    this.#playWordHandlers = [];
   }
 
   addEventListener(type, listener) {
@@ -138,7 +224,12 @@ class MorseCode {
         this.#speechSynthesis.onvoiceschanged += listener;
         break;
 
-      default: throw Error(`Unknown event type: ${type}`)
+      case 'playword':
+        this.#playWordHandlers.push(listener);
+        break;
+
+      default:
+        throw Error(`Unknown event type: ${type}`)
     }
   }
 
@@ -172,11 +263,11 @@ class MorseCode {
       '.': async () => playMorseTone(secsPerDit),
       '-': async () => playMorseTone(secsPerDah),
     };
-  
+
     const pauseInChar = async () => sleep(msInChar);
 
-    this.#pauseBetweenChars = async() => sleep(msBetweenChar);
-    this.#pauseBetweenWords = async() => sleep(msBetweenWords);
+    this.#pauseBetweenChars = async () => sleep(msBetweenChar);
+    this.#pauseBetweenWords = async () => sleep(msBetweenWords);
 
     this.#letters = mapValues(LETTERS, (pattern) => {
       const parts = zipSeparator(pattern.split('').map((c) => tones[c]), pauseInChar);
@@ -187,6 +278,13 @@ class MorseCode {
 
   get wordsPerMinute() {
     return this.#wordsPerMinute;
+  }
+
+  async playWords(words) {
+    for (let word of words) {
+      await this.play(word);
+      await this.#pauseBetweenWords();
+    }
   }
 
   async play(text) {
@@ -203,6 +301,8 @@ class MorseCode {
 
 
   async _playWord(word) {
+    this.#playWordHandlers.forEach((handler) => handler(word));
+
     return executeActions(
       zipSeparator(
         word.split('').map((letter) => async () => {
