@@ -1,94 +1,120 @@
 <!DOCTYPE html>
-
 <html lang="en-US">
-  <head>
+<head>
     <title>Morse Play</title>
-    <script src="./functions.js"></script>
-  </head>
-  <body>
-    <form>
-      <label for="wpm">WPM</label>
-      <input name="wpm" type="number" min="1" max="50" id="wpm" value="5" /><br>
-      <label for="frequency">Frequency</label>
-      <input name="frequency" type="number" min="100" max="1000" id="frequency" value="750" /><br>
-      <fieldset>
+</head>
+<body>
+<form id="form">
+    <label for="wpm">WPM</label>
+    <input name="wpm" type="number" min="1" max="50" id="wpm" value="5"/><br>
+    <label for="frequency">Frequency</label>
+    <input name="frequency" type="number" min="100" max="1000" id="frequency" value="750"/><br>
+    <fieldset>
         <legend>Content to play</legend>
         <input type="radio" name="content" value="text" id="play-text-radio" checked>
         <label for="play-text-radio">Text</label>
-        <input name="text" type="text" id="play-text" /><br/>
+        <input name="text" type="text" id="play-text"/><br/>
         <input type="radio" name="content" value="call-signs" id="play-call-signs-radio">
         <label for="play-call-signs-radio">Call signs</label>
-      </fieldset>
-      <label for="voice-list">Voices</label>
-      <select id="voice-list"></select><br/>
-      <button type="button" id="play-btn">Play</button>
-    </form>
-    <h1 id="current-word"></h1>
-    <script>
-      {
-        const wpmInput = document.getElementById('wpm');
-        const frequencyInput = document.getElementById('frequency');
-        const playTextInput = document.getElementById('play-text');
-        const playBtn = document.getElementById('play-btn');
-        const voiceList = document.getElementById("voice-list");
-        const currentWord = document.getElementById("current-word");
+    </fieldset>
+    <label for="voice-list">Voices</label>
+    <select id="voice-list"></select><br/>
+</form>
+<button type="button" id="play-btn">Play</button>
+<button type="button" id="stop-btn" disabled>Stop</button>
+<h1 id="current-word"></h1>
+<script type="module">
+  import {playMorseText} from "./morse.js";
+  import {randomCallSign} from "./call-sign.js";
+  import {enableForm, sleep} from "./system.js";
 
-        function loadVoices() {
-          console.info(`Loading voices: count=${MORSE_CODE.voices.length}`)
-          MORSE_CODE.voices.forEach(voice => {
-            const option = document.createElement('option');
-            option.textContent = `${voice.name} (${voice.lang})`;
-            voiceList.appendChild(option);
-          });
-        }
+  const form = document.getElementById('form');
+  const playBtn = document.getElementById('play-btn');
+  const stopBtn = document.getElementById('stop-btn');
+  const playTextInput = document.getElementById('play-text');
+  const wpmInput = document.getElementById('wpm');
+  const frequencyInput = document.getElementById('frequency');
+  const currentWordEl = document.getElementById('current-word');
 
-        const MORSE_CODE = new MorseCode({
-          volume: 0.1,
-          wordsPerMinute: parseInt(wpmInput.value, 10),
-          frequencyHz: parseInt(frequencyInput.value, 10),
-        });
+  let audioContext;
+  let stopController;
 
-        loadVoices();
-        MORSE_CODE.addEventListener('voiceschanged', (evt) => {
-          console.info("voiceschanged", evt);
-          voiceList.replaceChildren();
-          loadVoices();
-        });
+  function resetForm() {
+    currentWordEl.innerText = '';
+    playBtn.disabled = false;
+    enableForm(form, true);
+  }
 
-        MORSE_CODE.addEventListener('playword', (word) => {
-          currentWord.innerText = word;
-        });
+  async function playText(text, signal) {
+    await playMorseText({
+      audioContext,
+      signal,
+      text: text,
+      speed: parseInt(wpmInput.value, 10),
+      frequency: parseInt(frequencyInput.value, 10),
+      volume: 0.1,
+      characterCallback: (arg) => {
+        console.log('Next character', arg);
+        currentWordEl.innerText = arg.text;
+      },
+    });
 
-        wpmInput.addEventListener('change', (evt) => {
-          MORSE_CODE.wordsPerMinute = parseInt(evt.target.value, 10);
-        });
+    console.info('Waiting for learning');
+    await sleep(5000, signal);
+    console.info('done learning')
+  }
 
-        frequencyInput.addEventListener('change', (evt) => {
-          MORSE_CODE.frequencyHz = parseInt(evt.target.value, 10);
-        });
+  async function handleText(text, signal) {
+    try {
+      await playText(text, signal);
+    } catch (ex) {
+      console.error(ex);
+    } finally {
+      resetForm();
+    }
+  }
 
-        playBtn.addEventListener('click', () => {
-          const selectedContent = document.querySelector('input[name="content"]:checked').value;
-          console.info(`Playing content: selected=${selectedContent}`)
-
-          switch (selectedContent) {
-            case 'text':
-              playBtn.disabled = true;
-              MORSE_CODE.play(playTextInput.value).then(() => {
-                playBtn.disabled = false;
-                currentWord.innerText = '';
-              });
-              break;
-
-            case 'call-signs':
-              playBtn.disabled = true;
-              MORSE_CODE.playWords(generateCallSigns());
-              break;
-
-            default: throw Error(`Unknown content type: ${selectedContent}`)
-          }
-        });
+  async function handleCallSigns(signal) {
+    try {
+      while (!signal.aborted) {
+        await playText(randomCallSign(), signal);
       }
-    </script>
-  </body>
+    } catch (ex) {
+      console.error(ex);
+    } finally {
+      resetForm();
+    }
+  }
+
+  playBtn.addEventListener('click', () => {
+    stopBtn.disabled = false;
+    playBtn.disabled = true;
+    enableForm(form, false);
+
+    audioContext = audioContext || new AudioContext();
+    stopController = new AbortController();
+
+    const selectedContent = document.querySelector('input[name="content"]:checked').value;
+    console.info('Playing content', {selectedContent});
+
+    switch (selectedContent) {
+      case 'text':
+        handleText(playTextInput.value, stopController.signal);
+        break;
+
+      case 'call-signs':
+        handleCallSigns(stopController.signal);
+        break;
+    }
+  });
+
+  stopBtn.addEventListener('click', () => {
+    if (stopController) {
+      stopController.abort('Stop button clicked');
+      stopController = null;
+      stopBtn.disabled = true;
+    }
+  });
+</script>
+</body>
 </html>
