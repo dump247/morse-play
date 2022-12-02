@@ -3,6 +3,17 @@
 <head>
     <title>Morse Play</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        #current-text {
+            margin: 10px;
+            font-size: 2.5em;
+        }
+
+        #current-char {
+            font-weight: bold;
+            font-size: 1.5em;
+        }
+    </style>
 </head>
 <body>
 <form id="form">
@@ -23,7 +34,9 @@
 </form>
 <button type="button" id="play-btn">Play</button>
 <button type="button" id="stop-btn" disabled>Stop</button>
-<h1 id="current-word"></h1>
+<div id="current-text">
+    <span id="before-current-char"></span><span id="current-char"></span><span id="after-current-char"></span>
+</div>
 <script type="module">
   import {playMorseText} from "./morse.js";
   import {randomCallSign} from "./call-sign.js";
@@ -35,18 +48,25 @@
   const playTextInput = document.getElementById('play-text');
   const wpmInput = document.getElementById('wpm');
   const frequencyInput = document.getElementById('frequency');
-  const currentWordEl = document.getElementById('current-word');
+  const beforeCurrentCharEl = document.getElementById('before-current-char');
+  const currentCharEl = document.getElementById('current-char');
+  const afterCurrentCharEl = document.getElementById('after-current-char');
 
   let audioContext;
   let stopController;
 
   function resetForm() {
-    currentWordEl.innerText = '';
+    beforeCurrentCharEl.innerText = '';
+    currentCharEl.innerText = '';
+    afterCurrentCharEl.innerText = '';
     playBtn.disabled = false;
+    stopBtn.disabled = true;
     enableForm(form, true);
   }
 
   async function playText(text, signal) {
+    let visibleText = '';
+
     await playMorseText({
       audioContext,
       signal,
@@ -54,11 +74,21 @@
       speed: parseInt(wpmInput.value, 10),
       frequency: parseInt(frequencyInput.value, 10),
       volume: 0.1,
-      characterCallback: (arg) => {
-        console.log('Next character', arg);
-        currentWordEl.innerText = arg.text;
+      characterCallback: ({text, charIndex, char}) => {
+        console.log('Next character', {text, charIndex, char});
+
+        // Capture the text here because playMorseText applies some mutations (trim, capitalize, etc)
+        visibleText = text;
+
+        beforeCurrentCharEl.innerText = text.substring(0, charIndex);
+        currentCharEl.innerText = char;
+        afterCurrentCharEl.innerText = text.substring(charIndex + 1);
       },
     });
+
+    beforeCurrentCharEl.innerText = '';
+    currentCharEl.innerText = '';
+    afterCurrentCharEl.innerText = visibleText;
 
     console.info('Waiting for learning');
     await sleep(5000, signal);
