@@ -46,6 +46,7 @@
   const playBtn = document.getElementById('play-btn');
   const stopBtn = document.getElementById('stop-btn');
   const playTextInput = document.getElementById('play-text');
+  const playTextRadio = document.getElementById('play-text-radio');
   const wpmInput = document.getElementById('wpm');
   const frequencyInput = document.getElementById('frequency');
   const beforeCurrentCharEl = document.getElementById('before-current-char');
@@ -107,6 +108,10 @@
       resetForm();
     }
   }
+
+  playTextInput.addEventListener('focus', () => {
+    playTextRadio.checked = true;
+  });
 
   playBtn.addEventListener('click', () => {
     stopBtn.disabled = false;
