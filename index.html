@@ -73,18 +73,20 @@
       speed: parseInt(wpmInput.value, 10),
       frequency: parseInt(frequencyInput.value, 10),
       volume: 0.1,
-      characterCallback: ({text, char}) => {
+      characterCallback: async ({text, char}) => {
         console.log('Next character', {text, char});
 
         beforeCurrentCharEl.innerText = char ? text.substring(0, char.index) : '';
         currentCharEl.innerText = char?.value || '';
         afterCurrentCharEl.innerText = char ? text.substring(char.index + 1) : text;
+
+        if (!char && text) {
+          console.info('Waiting for learning');
+          await sleep(5000, signal);
+          console.info('done learning')
+        }
       },
     });
-
-    console.info('Waiting for learning');
-    await sleep(5000, signal);
-    console.info('done learning')
   }
 
   async function handleText(text, signal) {

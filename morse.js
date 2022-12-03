@@ -125,7 +125,7 @@ export function translateMorse(text, unknownChar = '') {
  * @param {number} speed Speed to play the text in words per minute.
  * @param {number} frequency Frequency of oscillation in hertz.
  * @param {number} volume Volume to play the tones at (0-1).
- * @param {function} characterCallback Callback to invoke before each character is played.
+ * @param {function} characterCallback Async callback to invoke before each character is played.
  * @returns {Promise<void>} Promise the resolves when the text finishes playing.
  */
 export async function playMorseText(
@@ -161,7 +161,7 @@ export async function playMorseText(
     const char = text[charIndex];
     const morseChar = morseText[charIndex];
 
-    characterCallback({
+    await characterCallback({
       text,
       morseText,
       char: {index: charIndex, value: char, morse: morseChar},
@@ -202,7 +202,7 @@ export async function playMorseText(
     }
   }
 
-  characterCallback({text, morseText, char: null});
+  await characterCallback({text, morseText, char: null});
 
   console.info('Playing morse tones complete');
 }
