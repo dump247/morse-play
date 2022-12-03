@@ -126,8 +126,6 @@
     const selectedContent = document.querySelector('input[name="content"]:checked').value;
     console.info('Playing content', {selectedContent});
 
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance('testing 1, 2, 3'));
-
     switch (selectedContent) {
       case 'text':
         handleText(playTextInput.value, stopController.signal);
