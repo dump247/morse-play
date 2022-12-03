@@ -101,19 +101,21 @@ export function translateMorse(text, unknownChar = '') {
  *   // Hyphen (-) for dah, period (.) for dit
  *   "morseText": ['.-', '-...', '-.-.'],
  *
- *   // Zero-based index of the letter in `text` and `morseText` that will be played.
- *   // See `char` and `morseChar`.
- *   "charIndex": 0,
+ *   // Character that is about to be played or null after the last character.
+ *   // There is one final event after the last character is played.
+ *   "char": {
+ *     // Zero-based index of the letter in `text` and `morseText` that will be played.
+ *     // See `value` and `morse`.
+ *     "index": 0,
  *
- *   // Letter to be played or space if pausing between words.
- *   "char": "A",
+ *     // Letter to be played or space if pausing between words.
+ *     "value": "A"
  *
- *   // Equivalent morse code for `letter` or empty string if there is no
- *   // equivalent.
- *   // Hyphen (-) for dah, period (.) for dit
- *   "morseChar": ".-",
- *
- *   ""
+ *     // Equivalent morse code for `letter` or empty string if there is no
+ *     // equivalent.
+ *     // Hyphen (-) for dah, period (.) for dit
+ *     "morse": ".-"
+ *   }
  * }
  * ```
  *
@@ -159,7 +161,11 @@ export async function playMorseText(
     const char = text[charIndex];
     const morseChar = morseText[charIndex];
 
-    characterCallback({text, morseText, charIndex, char, morseChar});
+    characterCallback({
+      text,
+      morseText,
+      char: {index: charIndex, value: char, morse: morseChar},
+    });
 
     if (char === ' ') {
       insideWord = false;
@@ -195,6 +201,8 @@ export async function playMorseText(
       }
     }
   }
+
+  characterCallback({text, morseText, char: null});
 
   console.info('Playing morse tones complete');
 }
