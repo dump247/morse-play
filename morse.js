@@ -1,4 +1,4 @@
-import {noop, sleep} from "./system.js";
+import {noop, sleep, checkAborted} from "./system.js";
 import {playTone} from "./tone.js";
 
 /**
@@ -139,6 +139,8 @@ export async function playMorseText(
     characterCallback = noop,
   }
 ) {
+  await checkAborted(signal);
+
   // Collapse each group of whitespace into a single space (used as a word separator)
   text = text.toUpperCase().trim().replaceAll(/'\\s+'/g, ' ')
 
