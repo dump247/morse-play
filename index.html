@@ -63,8 +63,9 @@
     }
 
     form.addEventListener('change', () => {
-      localStorage.setItem('form', serializeForm(form, 'wpm', 'frequency', 'content', 'play-text'));
-      console.info('Saved form data', {formData: localStorage.getItem('form')});
+      const formData = serializeForm(form, 'wpm', 'frequency', 'content', 'play-text');
+      localStorage.setItem('form', formData);
+      console.info('Saved form data', {formData});
     });
   }
 </script>
