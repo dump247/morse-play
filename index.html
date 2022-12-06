@@ -35,6 +35,36 @@
 <div id="current-text">
     <span id="before-current-char"></span><span id="current-char"></span><span id="after-current-char"></span>
 </div>
+<script>
+  {
+    function deserializeForm(form, formData) {
+      for (const [name, value] of Object.entries(JSON.parse(formData))) {
+        form.elements[name].value = value;
+      }
+    }
+
+    function serializeForm(form, ...fields) {
+      const result = {};
+
+      fields.forEach(name => {
+        result[name] = form.elements[name].value;
+      });
+
+      return JSON.stringify(result);
+    }
+
+    const form = document.getElementById('form');
+
+    deserializeForm(
+      document.getElementById('form'),
+      localStorage.getItem('form') || {},
+    );
+
+    form.addEventListener('change', () => {
+      localStorage.setItem('form', serializeForm(form, 'wpm', 'frequency', 'content', 'play-text'));
+    });
+  }
+</script>
 <script type="module">
   import {playMorseText} from "./morse.js";
   import {randomCallSign} from "./call-sign.js";
@@ -121,7 +151,7 @@
     audioContext = audioContext || new AudioContext();
     stopController = new AbortController();
 
-    const selectedContent = document.querySelector('input[name="content"]:checked').value;
+    const selectedContent = form.elements.content.value;
     console.info('Playing content', {selectedContent});
 
     switch (selectedContent) {
