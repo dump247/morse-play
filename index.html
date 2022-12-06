@@ -59,10 +59,7 @@
       const formData = localStorage.getItem('form');
 
       console.info('Loaded saved form data', {formData});
-      deserializeForm(
-        document.getElementById('form'),
-        localStorage.getItem('form') || {},
-      );
+      deserializeForm(form, formData);
     }
 
     form.addEventListener('change', () => {
