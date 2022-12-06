@@ -55,13 +55,19 @@
 
     const form = document.getElementById('form');
 
-    deserializeForm(
-      document.getElementById('form'),
-      localStorage.getItem('form') || {},
-    );
+    {
+      const formData = localStorage.getItem('form') || {};
+
+      console.info('Loaded saved form data', {formData});
+      deserializeForm(
+        document.getElementById('form'),
+        localStorage.getItem('form') || {},
+      );
+    }
 
     form.addEventListener('change', () => {
       localStorage.setItem('form', serializeForm(form, 'wpm', 'frequency', 'content', 'play-text'));
+      console.info('Saved form data', {formData: localStorage.getItem('form')});
     });
   }
 </script>
